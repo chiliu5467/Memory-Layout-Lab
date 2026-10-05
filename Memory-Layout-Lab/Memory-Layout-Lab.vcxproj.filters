@@ -19,4 +19,12 @@
       <Filter>來源檔案</Filter>
     </ClCompile>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="MemoryLayout.h">
+      <Filter>標頭檔</Filter>
+    </ClInclude>
+    <ClInclude Include="LayoutTypes.h">
+      <Filter>標頭檔</Filter>
+    </ClInclude>
+  </ItemGroup>
 </Project>
