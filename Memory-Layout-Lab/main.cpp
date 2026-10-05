@@ -2,6 +2,7 @@
 #include "LayoutTypes.h"
 
 #include <iostream>
+#include <cstddef>
 
 int main()
 {
@@ -28,6 +29,28 @@ int main()
 
     std::cout << "c: "
         << static_cast<void*>(&value.c) << '\n';
+
+    std::cout << "\nMember offsets:\n";
+
+    std::cout << "a offset: "
+        << offsetof(LayoutA, a) << '\n';
+
+    std::cout << "b offset: "
+        << offsetof(LayoutA, b) << '\n';
+
+    std::cout << "c offset: "
+        << offsetof(LayoutA, c) << '\n';
+
+    std::cout << "\nLayoutB offsets:\n";
+
+    std::cout << "b offset: "
+        << offsetof(LayoutB, b) << '\n';
+
+    std::cout << "a offset: "
+        << offsetof(LayoutB, a) << '\n';
+
+    std::cout << "c offset: "
+        << offsetof(LayoutB, c) << '\n';
 
     return 0;
 }
