@@ -62,8 +62,13 @@ void TestPrintBytes()
     int b = 256;
     int c = 0x12345678;
 
+    std::cout << "1:          ";
     PrintBytes(a);
+
+    std::cout << "256:        ";
     PrintBytes(b);
+
+    std::cout << "0x12345678: ";
     PrintBytes(c);
 
     std::cout << "\nPrint Layout A Bytes:\n";
@@ -78,16 +83,41 @@ void TestPrintBytes()
     auto bytes = std::as_bytes(
         std::span<const LayoutA>{&layout, 1});
 
-    if (bytes.size() == sizeof(layout))
-    {
-        std::cout << "The size of 'bytes' is equal to the size of 'layout'\n";
-    }
+    std::cout << "bytes.size(): " << bytes.size() << '\n';
+    std::cout << "sizeof(layout): " << sizeof(layout) << '\n';
 }
+
+void TestEncodeBigEndian()
+{
+    std::cout << "\nEncode Big Endian:\n";
+    int a = 1;
+    int b = 256;
+    int c = 0x12345678;
+    std::cout << "1:          ";
+	std::array<std::byte, sizeof(int)> encodedA = EncodeBigEndian(a);
+    PrintBytes(encodedA);
+
+    std::cout << "256:        ";
+    std::array<std::byte, sizeof(int)> encodedB = EncodeBigEndian(b);
+    PrintBytes(encodedB);
+
+    std::cout << "0x12345678: ";
+    std::array<std::byte, sizeof(int)> encodedC = EncodeBigEndian(c);
+    PrintBytes(encodedC);
+
+    std::cout << "\nDecode Big Endian:\n";
+	std::cout << "a: " << DecodeBigEndian(encodedA) << "\n";
+    std::cout << "b: " << DecodeBigEndian(encodedB) << "\n";
+    std::cout << "c: " << DecodeBigEndian(encodedC) << "\n";
+}
+
 
 int main()
 {
     TestPrintTypeInfo();
     TestPrintBytes();
+    PrintNativeEndian();
+    TestEncodeBigEndian();
 
     return 0;
 }
