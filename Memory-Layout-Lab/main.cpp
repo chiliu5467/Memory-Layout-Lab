@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <cstddef>
+#include <cassert>
 
 void TestPrintTypeInfo()
 {
@@ -111,6 +112,92 @@ void TestEncodeBigEndian()
     std::cout << "c: " << DecodeBigEndian(encodedC) << "\n";
 }
 
+void TestEncodeRecord()
+{
+    std::cout << "\nEecodeRecord Test Start!\n";
+    Record record{
+        2,
+        0x12345678,
+        {
+            std::byte{0xAA},
+            std::byte{0xBB},
+            std::byte{0xCC}
+        }
+    };
+
+    auto result = EncodeRecord(record);
+
+    if (!result)
+    {
+        std::cout << "Encoding failed\n";
+        return;
+    }
+
+    std::cout << "Encoded size: "
+        << result->size() << '\n';
+
+    std::cout << "Encoded bytes:\n";
+
+    for (auto byte : *result)
+    {
+        std::cout
+            << std::hex
+            << std::setw(2)
+            << std::setfill('0')
+            << std::to_integer<int>(byte)
+            << ' ';
+    }
+
+    std::cout << std::dec << '\n';
+}
+
+void TestDecodeRecord()
+{
+    std::cout << "\nDecodeRecord Test Start!\n";
+    Record original{
+        2,
+        0x12345678,
+        {
+            std::byte{0xAA},
+            std::byte{0xBB},
+            std::byte{0xCC}
+        }
+    };
+
+    // Step 2: Encode
+    auto encoded = EncodeRecord(original);
+
+    assert(encoded.has_value());
+
+    // Step 3: Decode
+    auto decoded = DecodeRecord(*encoded);
+
+    assert(decoded.has_value());
+
+    // Step 4: Compare results
+    assert(decoded->type == original.type);
+    assert(decoded->sequence == original.sequence);
+    assert(decoded->payload == original.payload);
+
+    std::cout << "DecodeRecord Test Passed!\n";
+}
+
+void TestInvalidHeader()
+{
+    std::cout << "\nInvalid Header Test Start!\n";
+    std::vector<std::byte> bytes{
+        std::byte{0x4D},
+        std::byte{0x4C},
+        std::byte{0x01}
+    };
+
+    auto decoded = DecodeRecord(bytes);
+
+    assert(!decoded.has_value());
+
+    std::cout << "Invalid Header Test Passed!\n";
+}
+
 
 int main()
 {
@@ -118,6 +205,9 @@ int main()
     TestPrintBytes();
     PrintNativeEndian();
     TestEncodeBigEndian();
+    TestEncodeRecord();
+    TestDecodeRecord();
+    TestInvalidHeader();
 
     return 0;
 }
