@@ -11,7 +11,6 @@
 #include <limits>
 #include <optional>
 #include <cstdint>
-#include <span>
 
 template <typename T>
 void PrintTypeInfo(const std::string& name)
@@ -161,9 +160,9 @@ DecodeRecord(std::span<const std::byte> bytes)
     auto payloadBytes =
         bytes.subspan(HEADER_SIZE, payloadLength);
 
-	std::vector<std::byte> payload(payloadBytes.begin(), payloadBytes.end());
-
-	result.payload.insert(result.payload.end(), payload.begin(), payload.end());
+    result.payload.assign(
+        payloadBytes.begin(),
+        payloadBytes.end());
 
     return result;
 }

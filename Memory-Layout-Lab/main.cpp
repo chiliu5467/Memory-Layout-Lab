@@ -198,6 +198,59 @@ void TestInvalidHeader()
     std::cout << "Invalid Header Test Passed!\n";
 }
 
+void TestWrongMagic()
+{
+    std::vector<std::byte> bytes{
+        std::byte{0x00}, std::byte{0x4C},
+        std::byte{0x01}, std::byte{0x02},
+        std::byte{0x12}, std::byte{0x34},
+        std::byte{0x56}, std::byte{0x78},
+        std::byte{0x00}, std::byte{0x00}
+    };
+
+    auto decoded = DecodeRecord(bytes);
+
+    assert(!decoded.has_value());
+    std::cout << "Wrong Magic Test Passed!\n";
+}
+
+void TestInvalidPayloadLength()
+{
+    std::vector<std::byte> bytes{
+        std::byte{0x4D}, std::byte{0x4C},
+        std::byte{0x01}, std::byte{0x02},
+        std::byte{0x12}, std::byte{0x34},
+        std::byte{0x56}, std::byte{0x78},
+        std::byte{0x00}, std::byte{0x05},
+        std::byte{0xAA}, std::byte{0xBB}
+    };
+
+    auto decoded = DecodeRecord(bytes);
+
+    assert(!decoded.has_value());
+    std::cout << "Invalid Payload Length Test Passed!\n";
+}
+
+void TestEmptyPayload()
+{
+    Record original{
+        1,
+        123,
+        {}
+    };
+
+    auto encoded = EncodeRecord(original);
+    assert(encoded.has_value());
+
+    auto decoded = DecodeRecord(*encoded);
+    assert(decoded.has_value());
+
+    assert(decoded->type == original.type);
+    assert(decoded->sequence == original.sequence);
+    assert(decoded->payload.empty());
+
+    std::cout << "Empty Payload Test Passed!\n";
+}
 
 int main()
 {
@@ -208,6 +261,9 @@ int main()
     TestEncodeRecord();
     TestDecodeRecord();
     TestInvalidHeader();
+    TestWrongMagic();
+    TestInvalidPayloadLength();
+    TestEmptyPayload();
 
     return 0;
 }
