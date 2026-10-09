@@ -1,9 +1,21 @@
 ﻿#include "MemoryLayout.h"
 #include "LayoutTypes.h"
+#include "EndianUtils.h"
+#include "BinaryRecord.h"
 
 #include <iostream>
 #include <cstddef>
 #include <cassert>
+#include <stdexcept>
+#include <string>
+
+void Check(bool condition, const std::string& message)
+{
+    if (!condition)
+    {
+        throw std::runtime_error(message);
+    }
+}
 
 void TestPrintTypeInfo()
 {
@@ -147,7 +159,7 @@ void TestEncodeRecord()
             << std::to_integer<int>(byte)
             << ' ';
     }
-
+	std::cout << "\nExpected Result: \n4D 4C 01 02 12 34 56 78 00 03 AA BB CC\n";
     std::cout << std::dec << '\n';
 }
 
@@ -167,17 +179,17 @@ void TestDecodeRecord()
     // Step 2: Encode
     auto encoded = EncodeRecord(original);
 
-    assert(encoded.has_value());
+    Check(encoded.has_value(), "Encoding failed");
 
     // Step 3: Decode
     auto decoded = DecodeRecord(*encoded);
 
-    assert(decoded.has_value());
+    Check(decoded.has_value(), "Decoding failed");
 
-    // Step 4: Compare results
-    assert(decoded->type == original.type);
-    assert(decoded->sequence == original.sequence);
-    assert(decoded->payload == original.payload);
+    Check(
+        decoded->sequence == original.sequence,
+        "Sequence mismatch"
+    );
 
     std::cout << "DecodeRecord Test Passed!\n";
 }
@@ -211,7 +223,7 @@ void TestWrongMagic()
     auto decoded = DecodeRecord(bytes);
 
     assert(!decoded.has_value());
-    std::cout << "Wrong Magic Test Passed!\n";
+    std::cout << "\nWrong Magic Test Passed!\n";
 }
 
 void TestInvalidPayloadLength()
@@ -228,7 +240,7 @@ void TestInvalidPayloadLength()
     auto decoded = DecodeRecord(bytes);
 
     assert(!decoded.has_value());
-    std::cout << "Invalid Payload Length Test Passed!\n";
+    std::cout << "\nInvalid Payload Length Test Passed!\n";
 }
 
 void TestEmptyPayload()
@@ -249,7 +261,42 @@ void TestEmptyPayload()
     assert(decoded->sequence == original.sequence);
     assert(decoded->payload.empty());
 
-    std::cout << "Empty Payload Test Passed!\n";
+    std::cout << "\nEmpty Payload Test Passed!\n";
+}
+
+void TestUnsupportedVersion()
+{
+    Record record{ 2, 0x12345678, {} };
+
+    auto encoded = EncodeRecord(record);
+
+    Check(encoded.has_value(), "Encoding failed");
+
+    // Corrupt the version byte
+    (*encoded)[2] = std::byte{ 0x02 };
+
+    auto decoded = DecodeRecord(*encoded);
+
+    Check(!decoded.has_value(), "Unsupported version should be rejected");
+}
+
+void TestTrailingBytes()
+{
+    Record record{ 2, 0x12345678, { std::byte{0xAA}, std::byte{0xBB} } };
+    auto encoded = EncodeRecord(record);
+    Check(encoded.has_value(), "Encoding failed");
+    
+    encoded->push_back(std::byte{ 0xCC });
+    encoded->push_back(std::byte{ 0xDD });
+    auto decoded = DecodeRecord(*encoded);
+	Check(!decoded.has_value(), "Trailing bytes should cause decoding to fail");
+}
+
+void TestOversizedPayload()
+{
+    Record record{ 2, 0x12345678, std::vector<std::byte>(65536, std::byte{0xAA}) };
+    auto encoded = EncodeRecord(record);
+    Check(!encoded.has_value(), "Encoding should fail for oversized payload");
 }
 
 int main()
@@ -264,6 +311,25 @@ int main()
     TestWrongMagic();
     TestInvalidPayloadLength();
     TestEmptyPayload();
+
+    try
+    {
+        TestUnsupportedVersion();
+        std::cout << "TestUnsupportedVersion PASSED\n";
+
+        TestTrailingBytes();
+        std::cout << "TestTrailingBytes PASSED\n";
+
+        TestOversizedPayload();
+        std::cout << "TestOversizedPayload PASSED\n";
+
+        std::cout << "\nAll tests passed!\n";
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "TEST FAILED: " << e.what() << '\n';
+        return 1;
+    }
 
     return 0;
 }

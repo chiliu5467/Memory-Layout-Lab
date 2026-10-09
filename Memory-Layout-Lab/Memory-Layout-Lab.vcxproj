@@ -130,6 +130,8 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BinaryRecord.h" />
+    <ClInclude Include="EndianUtils.h" />
     <ClInclude Include="LayoutTypes.h" />
     <ClInclude Include="MemoryLayout.h" />
   </ItemGroup>
