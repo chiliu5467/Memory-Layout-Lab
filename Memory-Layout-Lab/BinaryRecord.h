@@ -23,8 +23,6 @@ namespace BinaryFormat
     inline constexpr std::size_t HEADER_SIZE = 10;
 }
 
-inline constexpr std::size_t HEADER_SIZE = 10;
-
 inline std::optional<std::vector<std::byte>>
 EncodeRecord(const Record& record)
 {
@@ -35,7 +33,7 @@ EncodeRecord(const Record& record)
     }
 
     std::vector<std::byte> result;
-    result.reserve(HEADER_SIZE + record.payload.size());
+    result.reserve(BinaryFormat::HEADER_SIZE + record.payload.size());
 
     result.push_back(BinaryFormat::MAGIC_0);
     result.push_back(BinaryFormat::MAGIC_1);
@@ -64,7 +62,7 @@ DecodeRecord(std::span<const std::byte> bytes)
 {
     Record result{};
 
-    if (bytes.size() < HEADER_SIZE)
+    if (bytes.size() < BinaryFormat::HEADER_SIZE)
     {
         return std::nullopt;
     }
@@ -88,14 +86,14 @@ DecodeRecord(std::span<const std::byte> bytes)
         (std::to_integer<std::uint16_t>(bytes[8]) << 8) |
         std::to_integer<std::uint16_t>(bytes[9]);
 
-    auto remaining = bytes.size() - HEADER_SIZE;
+    auto remaining = bytes.size() - BinaryFormat::HEADER_SIZE;
     if (payloadLength != remaining)
     {
         return std::nullopt;
     }
 
     auto payloadBytes =
-        bytes.subspan(HEADER_SIZE, payloadLength);
+        bytes.subspan(BinaryFormat::HEADER_SIZE, payloadLength);
 
     result.payload.assign(
         payloadBytes.begin(),

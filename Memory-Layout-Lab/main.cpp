@@ -139,11 +139,7 @@ void TestEncodeRecord()
 
     auto result = EncodeRecord(record);
 
-    if (!result)
-    {
-        std::cout << "Encoding failed\n";
-        return;
-    }
+    Check(result.has_value(), "Encoding failed");
 
     std::cout << "Encoded size: "
         << result->size() << '\n';
@@ -159,7 +155,20 @@ void TestEncodeRecord()
             << std::to_integer<int>(byte)
             << ' ';
     }
-	std::cout << "\nExpected Result: \n4D 4C 01 02 12 34 56 78 00 03 AA BB CC\n";
+	
+    const std::vector<std::byte> expected{
+    std::byte{0x4D}, std::byte{0x4C},
+    std::byte{0x01}, std::byte{0x02},
+    std::byte{0x12}, std::byte{0x34},
+    std::byte{0x56}, std::byte{0x78},
+    std::byte{0x00}, std::byte{0x03},
+    std::byte{0xAA}, std::byte{0xBB},
+    std::byte{0xCC}
+    };
+
+    Check(*result == expected,
+        "Encoded bytes do not match protocol specification");
+
     std::cout << std::dec << '\n';
 }
 
@@ -186,10 +195,14 @@ void TestDecodeRecord()
 
     Check(decoded.has_value(), "Decoding failed");
 
-    Check(
-        decoded->sequence == original.sequence,
-        "Sequence mismatch"
-    );
+    Check(decoded->type == original.type,
+        "Type mismatch");
+
+    Check(decoded->sequence == original.sequence,
+        "Sequence mismatch");
+
+    Check(decoded->payload == original.payload,
+        "Payload mismatch");
 
     std::cout << "DecodeRecord Test Passed!\n";
 }
@@ -205,7 +218,8 @@ void TestInvalidHeader()
 
     auto decoded = DecodeRecord(bytes);
 
-    assert(!decoded.has_value());
+    Check(!decoded.has_value(),
+        "Invalid header should be rejected");
 
     std::cout << "Invalid Header Test Passed!\n";
 }
@@ -222,7 +236,8 @@ void TestWrongMagic()
 
     auto decoded = DecodeRecord(bytes);
 
-    assert(!decoded.has_value());
+    Check(!decoded.has_value(),
+        "Wrong magic bytes should be rejected");
     std::cout << "\nWrong Magic Test Passed!\n";
 }
 
@@ -239,7 +254,8 @@ void TestInvalidPayloadLength()
 
     auto decoded = DecodeRecord(bytes);
 
-    assert(!decoded.has_value());
+    Check(!decoded.has_value(),
+        "Invalid payload length should be rejected");
     std::cout << "\nInvalid Payload Length Test Passed!\n";
 }
 
@@ -252,14 +268,21 @@ void TestEmptyPayload()
     };
 
     auto encoded = EncodeRecord(original);
-    assert(encoded.has_value());
+
+    Check(encoded.has_value(), "Encoding failed");
 
     auto decoded = DecodeRecord(*encoded);
-    assert(decoded.has_value());
 
-    assert(decoded->type == original.type);
-    assert(decoded->sequence == original.sequence);
-    assert(decoded->payload.empty());
+    Check(decoded.has_value(), "Decoding failed");
+
+    Check(decoded->type == original.type,
+        "Type mismatch");
+
+    Check(decoded->sequence == original.sequence,
+        "Sequence mismatch");
+
+    Check(decoded->payload == original.payload,
+        "Payload mismatch");
 
     std::cout << "\nEmpty Payload Test Passed!\n";
 }
@@ -301,19 +324,20 @@ void TestOversizedPayload()
 
 int main()
 {
-    TestPrintTypeInfo();
-    TestPrintBytes();
-    PrintNativeEndian();
-    TestEncodeBigEndian();
-    TestEncodeRecord();
-    TestDecodeRecord();
-    TestInvalidHeader();
-    TestWrongMagic();
-    TestInvalidPayloadLength();
-    TestEmptyPayload();
-
     try
     {
+        TestPrintTypeInfo();
+        TestPrintBytes();
+        PrintNativeEndian();
+        TestEncodeBigEndian();
+
+        TestEncodeRecord();
+        TestDecodeRecord();
+        TestInvalidHeader();
+        TestWrongMagic();
+        TestInvalidPayloadLength();
+        TestEmptyPayload();
+
         TestUnsupportedVersion();
         std::cout << "TestUnsupportedVersion PASSED\n";
 
@@ -327,7 +351,9 @@ int main()
     }
     catch (const std::exception& e)
     {
-        std::cerr << "TEST FAILED: " << e.what() << '\n';
+        std::cerr << "TEST FAILED: "
+            << e.what() << '\n';
+
         return 1;
     }
 

@@ -5,7 +5,7 @@
 #include <array>
 
 
-void PrintNativeEndian()
+inline void PrintNativeEndian()
 {
     if constexpr (std::endian::native == std::endian::little)
     {
@@ -21,7 +21,7 @@ void PrintNativeEndian()
     }
 }
 
-std::array<std::byte, 4> EncodeBigEndian(std::uint32_t value)
+inline std::array<std::byte, 4> EncodeBigEndian(std::uint32_t value)
 {
     return std::array<std::byte, 4>{
         std::byte((value >> 24) & 0xFF),
@@ -31,7 +31,7 @@ std::array<std::byte, 4> EncodeBigEndian(std::uint32_t value)
     };
 }
 
-std::uint32_t DecodeBigEndian(
+inline std::uint32_t DecodeBigEndian(
     const std::array<std::byte, 4>& bytes)
 {
     return (std::to_integer<std::uint32_t>(bytes[0]) << 24) |
